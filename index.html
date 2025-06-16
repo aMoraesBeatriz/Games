@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Pet Virtual</title>
+	<style type="text/css">
+		canvas {
+			display: block;
+			margin: 0 auto;
+			background-color: #B0E0E6;
+		}
+		#botoes {
+			text-align: center;
+			margin-top: 20px;
+		}
+		button {
+			margin: 5px;
+			padding: 10px 20px;
+			font-size: 16px;
+			border-radius: 8px;
+			border: none;
+			cursor: pointer;
+			background-color: #008080;
+			color: white;
+		}
+		button:hover {
+			background-color: #20B2AA;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="meuCanvas"></canvas>
+
+	<div id="botoes">
+		<button onclick="personagem.alimentar()">🍽 Alimentar</button>
+		<button onclick="personagem.dormir()">😴 Dormir</button>
+		<button onclick="personagem.brincar()">🎲 Brincar</button>
+		<button onclick="personagem.cuidarSaude()">💊 Cuidar da Saúde</button>
+	</div>
+
+	<script type="text/javascript">
+		var canvas, contexto;
+		var altura, largura;
+		var quadros = 0;
+		var vida = 100;
+		var felicidade = 100;
+		var saciedade = 100;
+		var saúde = 100;
+		var descanso = 100;
+
+		var estados = {
+			jogar: 0,
+			jogando: 1,
+			sair: 2
+		};
+
+		var estadoAtual = estados.jogar;
+
+		var personagem = {
+			x: 0, // será definido no main()
+			y: 0,
+			largura: 100, // 25% maior que 80
+			altura: 100,
+			imagem: new Image(),
+
+			init: function() {
+				this.imagem.src = "cat_pixel.jpg"; // substitua pelo seu caminho se preferir
+			},
+
+			desenhar: function() {
+				contexto.drawImage(this.imagem, this.x, this.y, this.largura, this.altura);
+			},
+
+			atualizarStatus: function() {
+				if (quadros % 60 === 0) {
+					felicidade -= 1;
+					saciedade -= 1;
+					if (saúde < 30 || saciedade < 30 || descanso < 30) {
+						vida -= 1;
+					}
+					if (saciedade < 20 || descanso < 20) {
+						saúde -= 1;
+					}
+
+					felicidade = Math.max(0, Math.min(felicidade, 100));
+					saciedade = Math.max(0, Math.min(saciedade, 100));
+					saúde = Math.max(0, Math.min(saúde, 100));
+					descanso = Math.max(0, Math.min(descanso, 100));
+					vida = Math.max(0, Math.min(vida, 100));
+				}
+			},
+
+			alimentar: function() {
+				saciedade += 20;
+				felicidade += 5;
+			},
+
+			dormir: function() {
+				descanso += 25;
+				saúde += 10;
+			},
+
+			brincar: function() {
+				felicidade += 15;
+				descanso -= 5;
+				saciedade -= 5;
+			},
+
+			cuidarSaude: function() {
+				saúde += 20;
+				felicidade -= 5;
+			}
+		};
+
+		personagem.init();
+
+		function desenharHUD() {
+			const baseX = 20;
+			let baseY = 30;
+			const larguraBarra = 150;
+			const alturaBarra = 15;
+			const espaco = 25;
+
+			const atributos = [
+				{ nome: "Vida", valor: vida, cor: "#e60000" },
+				{ nome: "Felicidade", valor: felicidade, cor: "#ffd700" },
+				{ nome: "Saciedade", valor: saciedade, cor: "#00bfff" },
+				{ nome: "Saúde", valor: saúde, cor: "#32cd32" },
+				{ nome: "Descanso", valor: descanso, cor: "#9370db" }
+			];
+
+			atributos.forEach(atributo => {
+				contexto.fillStyle = "#000";
+				contexto.font = "14px Arial";
+				contexto.fillText(atributo.nome, baseX, baseY);
+
+				contexto.fillStyle = "#ccc";
+				contexto.fillRect(baseX + 80, baseY - 12, larguraBarra, alturaBarra);
+
+				contexto.fillStyle = atributo.cor;
+				contexto.fillRect(baseX + 80, baseY - 12, larguraBarra * (atributo.valor / 100), alturaBarra);
+
+				baseY += espaco;
+			});
+		}
+
+		function clique(event){
+			if (estadoAtual === estados.jogar) {
+				estadoAtual = estados.jogando;
+			}
+		}
+
+		function atualizar() {
+			quadros++;
+			personagem.atualizarStatus();
+		}
+
+		function desenhar(){
+			contexto.fillStyle = "#B0E0E6";
+			contexto.fillRect(0, 0, largura, altura);
+
+			personagem.desenhar();
+			desenharHUD();
+		}
+
+		function main(){
+			altura = window.innerHeight;
+			largura = window.innerWidth;
+
+			if (largura >= 500) {
+				largura = 590;
+				altura = 300;
+			}
+
+			canvas = document.getElementById("meuCanvas");
+			canvas.width = largura;
+			canvas.height = altura;
+
+			contexto = canvas.getContext("2d");
+			document.addEventListener("mousedown", clique);
+
+			estadoAtual = estados.jogando;
+
+			setInterval(function(){
+				atualizar();
+				desenhar();
+			}, 100); // 10 FPS
+
+			// Centraliza o pet no canvas
+			personagem.x = (largura - personagem.largura) / 2;
+			personagem.y = altura - personagem.altura - 60; // 60px acima da base inferior, pode ajustar se quiser mais alto
+
+		}
+
+		main();
+	</script>
+</body>
+</html>
